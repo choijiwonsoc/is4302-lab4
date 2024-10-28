@@ -2,8 +2,6 @@ pragma solidity ^0.5.0;
 
 contract Dice {
     
-    enum diceState { stationary, rolling }
-    
     struct dice {
         uint8 numberOfSides;
         uint8 color;
@@ -16,27 +14,28 @@ contract Dice {
         bool locked;
     }
     
+    enum diceState { stationary, rolling }
     event rolling (uint256 diceId);
     event rolled (uint256 diceId, uint8 newNumber);
-    event luckytimesEvent (uint256 diceId);
-    event diceDeleted(uint256 diceId);
-    
+
     uint256 public numDices = 0;
     mapping(uint256 => dice) public dices;
 
-    //function to create a new dice, and add to 'dices' map. requires at least 0.01ETH to create
+
+    event luckytimesEvent (uint256 diceId);
+    event diceDeleted(uint256 diceId);
+    
     function add(
         uint8 numberOfSides,
         uint8 color
     ) public payable returns(uint256) {
         require(numberOfSides > 0);
-        require(msg.value > 0.01 ether, "at least 0.01 ETH is needed to spawn a new dice");
+        require(msg.value > 0.01 ether, "creating a new dice needs at least 0.01 ETH");
         
-        //new dice object
         dice memory newDice = dice(
             numberOfSides,
             color,
-            (uint8)(block.timestamp % numberOfSides) + 1,  //non-secure random number
+            (uint8)(block.timestamp % numberOfSides) + 1, 
             diceState.stationary,
             msg.value,
             msg.sender,  //owner
@@ -49,10 +48,9 @@ contract Dice {
         dices[newDiceId] = newDice; //commit to state variable
         return newDiceId;   //return new diceId
     }
-
-    //modifier to ensure a function is callable only by its owner    
+  
     modifier ownerOnly(uint256 diceId) {
-        require(dices[diceId].owner == msg.sender, "Not dice owner");
+        require(dices[diceId].owner == msg.sender, "Sender is not the owner of the dice");
         _;
     }
     
@@ -61,12 +59,11 @@ contract Dice {
         require(dices[diceId].owner != address(0), "DiceID is invalid.");
         _;
     }
-
-    //owner can roll a dice    
+  
     function roll(uint256 diceId) public ownerOnly(diceId) validDiceId(diceId) {
-            dices[diceId].state = diceState.rolling;    //set state to rolling
-            dices[diceId].currentNumber = 0;    //number will become 0 while rolling
-            emit rolling(diceId);   //emit rolling event
+            dices[diceId].state = diceState.rolling;    
+            dices[diceId].currentNumber = 0;   
+            emit rolling(diceId);   
     }
 
     function stopRoll(uint256 diceId) public ownerOnly(diceId) validDiceId(diceId) {
@@ -82,43 +79,35 @@ contract Dice {
             emit rolled(diceId, newNumber); //emit rolled
     }
     
-    //transfer ownership to new owner
     function transfer(uint256 diceId, address newOwner) public ownerOnly(diceId) validDiceId(diceId) {
         dices[diceId].prevOwner = dices[diceId].owner;
         dices[diceId].owner = newOwner;
     }
-
-    //get number of sides of dice    
+  
     function getDiceSides(uint256 diceId) public view validDiceId(diceId) returns (uint8) {
         return dices[diceId].numberOfSides;
     }
 
-    //get current dice number
-    function getDiceNumber(uint256 diceId) public view validDiceId(diceId) returns (uint8) {
-        return dices[diceId].currentNumber;
-    }
-
-    //get color of dice
     function getDiceColor(uint256 diceId) public view validDiceId(diceId) returns (uint8) {
         return dices[diceId].color;
     }
 
-    //get ether put in during creation
+    function getDiceNumber(uint256 diceId) public view validDiceId(diceId) returns (uint8) {
+        return dices[diceId].currentNumber;
+    }
+
     function getDiceValue(uint256 diceId) public view validDiceId(diceId) returns (uint256) {
         return dices[diceId].creationValue;
     }
 
-    //get luckyTimes
     function getLuckyTimes(uint256 diceId) public view validDiceId(diceId) returns (uint256) {
         return dices[diceId].luckyTimes;
     }
 
-    //get previous onwer
     function getPreviousOwner(uint256 diceId) public view validDiceId(diceId) returns (address) {
         return dices[diceId].prevOwner;
     }
 
-    //Destroy dice
     function destroyDice(uint256 diceId) public payable validDiceId(diceId) ownerOnly(diceId) {
         require(!dices[diceId].locked, "Failed to Acquire Lock");
 
@@ -134,7 +123,6 @@ contract Dice {
         emit diceDeleted(diceId); //emit diceDeleted
     }
 
-    //Returns Dice Owner
     function getDiceOwner(uint256 diceId) public view validDiceId(diceId) returns (address) {
         return dices[diceId].owner;
     }

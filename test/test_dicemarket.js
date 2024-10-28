@@ -47,7 +47,7 @@ contract("DiceMarket", function (accounts) {
     } catch (error) {
       assert.equal(
         error.reason,
-        "at least 0.01 ETH is needed to spawn a new dice",
+        "creating a new dice needs at least 0.01 ETH",
         "Error message mismatch"
       );
     }
@@ -83,7 +83,7 @@ contract("DiceMarket", function (accounts) {
     } catch (error) {
       assert.equal(
         error.reason,
-        "Price is lesser than Commission + Dice value",
+        "Price must be more than or equal to commission + dice value",
         "Error message mismatch"
       );
     }
